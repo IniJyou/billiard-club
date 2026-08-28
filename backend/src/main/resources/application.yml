@@ -1,0 +1,33 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/billiard_club?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: "123456789"
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+mybatis-plus:
+  # Mapper XML 位置（复杂 SQL 放到 resources/mapper/ 下）
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    # 下划线字段名自动映射驼峰属性（table_no -> tableNo）
+    map-underscore-to-camel-case: true
+    # 开发期打印 SQL（上线/演示前可改为不打印）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      table-underline: true
+
+logging:
+  level:
+    com.club: debug

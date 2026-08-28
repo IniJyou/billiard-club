@@ -1,0 +1,26 @@
+# ---- Node / 前端 ----
+node_modules/
+dist/
+*.local
+.DS_Store
+
+# ---- Java / Maven ----
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# ---- 日志与临时 ----
+*.log
+logs/
+tmp/
+
+# ---- 打包产物（提交压缩包时单独处理）----
+*.rar
+*.zip

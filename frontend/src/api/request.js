@@ -1,0 +1,21 @@
+import axios from 'axios'
+
+// 统一 axios 实例：baseURL=/api 会走 vite 代理到后端 8080
+const request = axios.create({
+  baseURL: '/api',
+  timeout: 10000
+})
+
+// 响应拦截：后端统一返回 { code, message, data }
+request.interceptors.response.use(
+  (response) => {
+    const res = response.data
+    if (res.code !== 200) {
+      return Promise.reject(new Error(res.message || '请求失败'))
+    }
+    return res
+  },
+  (error) => Promise.reject(error)
+)
+
+export default request
