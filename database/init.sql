@@ -66,7 +66,7 @@ CREATE TABLE `member` (
   `update_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_card_no` (`card_no`),
-  KEY `idx_phone` (`phone`),
+  UNIQUE KEY `uk_phone` (`phone`),
   CONSTRAINT `fk_member_level` FOREIGN KEY (`level_id`) REFERENCES `member_level` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员表';
 

@@ -4,6 +4,11 @@ server:
     encoding:
       charset: UTF-8
       force: true
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
 
 spring:
   datasource:

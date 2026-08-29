@@ -20,6 +20,7 @@ target/
 *.log
 logs/
 tmp/
+release/
 
 # ---- 打包产物（提交压缩包时单独处理）----
 *.rar
