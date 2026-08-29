@@ -26,13 +26,16 @@ mybatis-plus:
   configuration:
     # 下划线字段名自动映射驼峰属性（table_no -> tableNo）
     map-underscore-to-camel-case: true
-    # 开发期打印 SQL（上线/演示前可改为不打印）
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # SQL 统一进入 SLF4J，终端与滚动日志文件都能查看
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     db-config:
       id-type: auto
       table-underline: true
 
 logging:
+  file:
+    path: logs
   level:
-    com.club: debug
+    com.club: info
+    com.club.mapper: debug

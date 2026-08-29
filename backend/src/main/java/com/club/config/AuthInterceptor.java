@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -19,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthInterceptor.class);
     private final ObjectMapper objectMapper;
 
     public AuthInterceptor(ObjectMapper objectMapper) {
@@ -35,6 +38,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         HttpSession session = request.getSession(false);
         LoginUser user = session == null ? null : (LoginUser) session.getAttribute(SessionKeys.LOGIN_USER);
         if (user == null) {
+            log.warn("event=access_denied reason=unauthenticated method={} path={} ip={}",
+                    request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
             writeError(response, 401, "登录已失效，请重新登录");
             return false;
         }
@@ -43,6 +48,8 @@ public class AuthInterceptor implements HandlerInterceptor {
                 && (method.hasMethodAnnotation(AdminOnly.class)
                 || method.getBeanType().isAnnotationPresent(AdminOnly.class))
                 && user.getRole() != 1) {
+            log.warn("event=access_denied reason=forbidden userId={} username={} method={} path={}",
+                    user.getId(), user.getUsername(), request.getMethod(), request.getRequestURI());
             writeError(response, 403, "当前账号没有管理员权限");
             return false;
         }

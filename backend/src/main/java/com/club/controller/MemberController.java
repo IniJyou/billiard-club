@@ -12,6 +12,8 @@ import com.club.vo.MemberView;
 import com.club.vo.RechargeResult;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/members")
 public class MemberController {
 
+    private static final Logger log = LoggerFactory.getLogger(MemberController.class);
     private final MemberService memberService;
     private final RechargeService rechargeService;
 
@@ -43,20 +46,30 @@ public class MemberController {
     }
 
     @PostMapping
-    public Result<MemberView> create(@Valid @RequestBody MemberSaveRequest request) {
-        return Result.success("会员建档成功", memberService.create(request));
+    public Result<MemberView> create(@Valid @RequestBody MemberSaveRequest request, HttpSession session) {
+        MemberView member = memberService.create(request);
+        log.info("event=member_create operatorId={} memberId={} cardNo={}",
+                SessionUtils.currentUser(session).getId(), member.getId(), member.getCardNo());
+        return Result.success("会员建档成功", member);
     }
 
     @PutMapping("/{id}")
     public Result<MemberView> update(@PathVariable Long id,
-                                     @Valid @RequestBody MemberSaveRequest request) {
-        return Result.success("会员资料已更新", memberService.update(id, request));
+                                     @Valid @RequestBody MemberSaveRequest request,
+                                     HttpSession session) {
+        MemberView member = memberService.update(id, request);
+        log.info("event=member_update operatorId={} memberId={}",
+                SessionUtils.currentUser(session).getId(), id);
+        return Result.success("会员资料已更新", member);
     }
 
     @PatchMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id,
-                                     @Valid @RequestBody MemberStatusRequest request) {
+                                     @Valid @RequestBody MemberStatusRequest request,
+                                     HttpSession session) {
         memberService.updateStatus(id, request);
+        log.info("event=member_status operatorId={} memberId={} status={}",
+                SessionUtils.currentUser(session).getId(), id, request.getStatus());
         return Result.success();
     }
 
@@ -65,6 +78,10 @@ public class MemberController {
                                            @Valid @RequestBody RechargeRequest request,
                                            HttpSession session) {
         Long operatorId = SessionUtils.currentUser(session).getId();
-        return Result.success("充值成功", rechargeService.recharge(id, request, operatorId));
+        RechargeResult result = rechargeService.recharge(id, request, operatorId);
+        log.info("event=member_recharge operatorId={} memberId={} recordNo={} amount={} giftAmount={} payWay={} newBalance={}",
+                operatorId, id, result.getRecord().getRecordNo(), result.getRecord().getAmount(),
+                result.getRecord().getGiftAmount(), result.getRecord().getPayWay(), result.getNewBalance());
+        return Result.success("充值成功", result);
     }
 }

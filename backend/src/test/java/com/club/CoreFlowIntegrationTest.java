@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -40,6 +41,7 @@ class CoreFlowIntegrationTest {
     void rejectsAnonymousAndInvalidLogins() throws Exception {
         mockMvc.perform(get("/api/tables"))
                 .andExpect(status().isUnauthorized())
+                .andExpect(header().exists("X-Request-Id"))
                 .andExpect(jsonPath("$.code").value(401));
 
         mockMvc.perform(post("/api/auth/login")
