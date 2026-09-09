@@ -128,8 +128,13 @@ async function load() {
 }
 
 async function loadMembers() {
-  const response = await getMembers({ page: 1, pageSize: 100 })
-  members.value = response.data.records.filter((member) => member.status === 1)
+  try {
+    const response = await getMembers({ page: 1, pageSize: 100 })
+    members.value = response.data.records.filter((member) => member.status === 1)
+  } catch (error) {
+    members.value = []
+    ElMessage.error(error.message)
+  }
 }
 
 function showOpen(table) {
@@ -178,13 +183,13 @@ async function submitCheckout() {
 }
 
 async function cancel(table) {
-  await ElMessageBox.confirm(`取消 ${table.tableNo} 的本次开台吗？取消后不会生成账单。`, '取消开台', { type: 'warning' })
   try {
+    await ElMessageBox.confirm(`取消 ${table.tableNo} 的本次开台吗？取消后不会生成账单。`, '取消开台', { type: 'warning' })
     await cancelSession(table.activeSessionId)
     ElMessage.success('本次开台已取消')
     await load()
   } catch (error) {
-    ElMessage.error(error.message)
+    if (error !== 'cancel' && error !== 'close') ElMessage.error(error.message)
   }
 }
 

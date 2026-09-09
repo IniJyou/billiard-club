@@ -18,6 +18,9 @@ public final class BillingCalculator {
         if (start == null || end == null || hourlyPrice == null || discountRate == null) {
             throw new BusinessException("计费参数不完整");
         }
+        if (end.isBefore(start)) {
+            throw new BusinessException("结账时间不能早于开台时间");
+        }
         long seconds = Math.max(1, Duration.between(start, end).getSeconds());
         long billedHours = (seconds + 3599) / 3600;
         BigDecimal durationHours = BigDecimal.valueOf(billedHours).setScale(2, RoundingMode.UNNECESSARY);

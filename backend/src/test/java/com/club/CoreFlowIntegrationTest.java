@@ -170,6 +170,44 @@ class CoreFlowIntegrationTest {
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM order_bill", Integer.class)).isZero();
     }
 
+    @Test
+    void cancelDoesNotCreateBillAndReleasesTable() throws Exception {
+        MockHttpSession session = login("cashier");
+        String sessionBody = mockMvc.perform(post("/api/sessions").session(session)
+                        .contentType("application/json").content("{\"tableId\":1}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        long sessionId = objectMapper.readTree(sessionBody).path("data").path("id").asLong();
+
+        mockMvc.perform(post("/api/sessions/{id}/cancel", sessionId).session(session))
+                .andExpect(status().isOk());
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM billiard_table WHERE id = 1", Integer.class)).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM table_session WHERE id = ?", Integer.class, sessionId)).isEqualTo(2);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM order_bill", Integer.class)).isZero();
+    }
+
+    @Test
+    void guestCanCheckoutWithCashAndCannotCheckoutTwice() throws Exception {
+        MockHttpSession session = login("cashier");
+        String sessionBody = mockMvc.perform(post("/api/sessions").session(session)
+                        .contentType("application/json").content("{\"tableId\":1}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        long sessionId = objectMapper.readTree(sessionBody).path("data").path("id").asLong();
+
+        mockMvc.perform(post("/api/sessions/{id}/checkout", sessionId).session(session)
+                        .contentType("application/json").content("{\"payWay\":1}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.bill.finalAmount").value(20.0));
+        mockMvc.perform(post("/api/sessions/{id}/checkout", sessionId).session(session)
+                        .contentType("application/json").content("{\"payWay\":1}"))
+                .andExpect(status().isConflict());
+
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM order_bill", Integer.class)).isOne();
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM consumption_record", Integer.class)).isOne();
+    }
+
     private MockHttpSession login(String username) throws Exception {
         return (MockHttpSession) mockMvc.perform(post("/api/auth/login")
                         .contentType("application/json")

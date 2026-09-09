@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class BillingCalculatorTest {
 
@@ -34,5 +35,12 @@ class BillingCalculatorTest {
         assertThat(result.originalAmount()).isEqualByComparingTo("40.00");
         assertThat(result.finalAmount()).isEqualByComparingTo("38.00");
         assertThat(result.pointsEarned()).isEqualTo(38);
+    }
+
+    @Test
+    void rejectsEndTimeBeforeStartTime() {
+        assertThatThrownBy(() -> BillingCalculator.calculate(start, start.minusSeconds(1),
+                new BigDecimal("20.00"), BigDecimal.ONE))
+                .hasMessage("结账时间不能早于开台时间");
     }
 }
