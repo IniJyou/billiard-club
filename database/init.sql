@@ -182,7 +182,7 @@ INSERT INTO `member_level` (`id`, `name`, `discount`, `points_threshold`) VALUES
 (3, '金卡会员', 0.90, 2000),
 (4, '钻石会员', 0.85, 5000);
 
--- 系统用户：密码均为 MD5("123456") = e10adc3949ba59abbe56e057f20f883e
+-- 系统用户：初始密码为 MD5("123456")，首次成功登录后由应用自动升级为 BCrypt
 INSERT INTO `sys_user` (`username`, `password`, `real_name`, `role`, `status`) VALUES
 ('admin',   'e10adc3949ba59abbe56e057f20f883e', '老板(管理员)', 1, 1),
 ('cashier', 'e10adc3949ba59abbe56e057f20f883e', '前台小王',      2, 1);

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { getCurrentUser, login as loginRequest, logout as logoutRequest } from '../api/auth'
+import { setUnauthorizedHandler } from '../api/request'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -11,6 +12,10 @@ export const useAuthStore = defineStore('auth', {
   },
   actions: {
     async initialize() {
+      setUnauthorizedHandler(() => {
+        this.user = null
+        this.initialized = true
+      })
       if (this.initialized) return this.user
       try {
         const response = await getCurrentUser()
@@ -35,6 +40,10 @@ export const useAuthStore = defineStore('auth', {
         this.user = null
         this.initialized = true
       }
+    },
+    clearSession() {
+      this.user = null
+      this.initialized = true
     }
   }
 })

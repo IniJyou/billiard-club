@@ -1,10 +1,12 @@
 package com.club.common;
 
 import org.springframework.validation.FieldError;
+import org.springframework.validation.BindException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.slf4j.Logger;
@@ -29,11 +31,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Result<Void>> handleValid(MethodArgumentNotValidException e) {
+        if (e.getBindingResult().getFieldErrors().stream().anyMatch(FieldError::isBindingFailure)) {
+            return ResponseEntity.badRequest().body(Result.error(400, "查询参数格式不正确"));
+        }
         String msg = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .findFirst()
                 .orElse("参数校验失败");
         return ResponseEntity.badRequest().body(Result.error(400, msg));
+    }
+
+    @ExceptionHandler({BindException.class, MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Result<Void>> handleBinding(Exception e) {
+        return ResponseEntity.badRequest().body(Result.error(400, "查询参数格式不正确"));
     }
 
     @ExceptionHandler(DuplicateKeyException.class)

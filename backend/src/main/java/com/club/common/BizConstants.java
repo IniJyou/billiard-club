@@ -5,6 +5,9 @@ public final class BizConstants {
     public static final int ENABLED = 1;
     public static final int DISABLED = 0;
 
+    public static final int ROLE_ADMIN = 1;
+    public static final int ROLE_CASHIER = 2;
+
     public static final int TABLE_IDLE = 0;
     public static final int TABLE_IN_USE = 1;
     public static final int TABLE_MAINTENANCE = 2;
@@ -15,6 +18,7 @@ public final class BizConstants {
 
     public static final int PAY_CASH = 1;
     public static final int PAY_BALANCE = 2;
+    public static final int PAY_CREDIT = 3;
 
     private BizConstants() {
     }

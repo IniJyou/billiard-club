@@ -16,6 +16,8 @@ public class ConsumptionRecordView {
     private Integer type;
     private String itemName;
     private BigDecimal amount;
+    private Integer payWay;
+    private Long operatorId;
     private String operatorName;
     private LocalDateTime createTime;
 }

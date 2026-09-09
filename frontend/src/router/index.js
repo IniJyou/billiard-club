@@ -13,7 +13,9 @@ const routes = [
       { path: 'home', name: 'Home', component: () => import('../views/Home.vue') },
       { path: 'members', name: 'Members', component: () => import('../views/Member.vue') },
       { path: 'tables', name: 'Tables', component: () => import('../views/Table.vue') },
-      { path: 'records', name: 'Records', component: () => import('../views/Record.vue') }
+      { path: 'records', name: 'Records', component: () => import('../views/Record.vue') },
+      { path: 'reports', name: 'Reports', component: () => import('../views/Report.vue'), meta: { roles: [1] } },
+      { path: 'forbidden', name: 'Forbidden', component: () => import('../views/Forbidden.vue') }
     ]
   }
 ]
@@ -29,6 +31,9 @@ router.beforeEach(async (to) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   if (requiresAuth && !auth.user) {
     return { path: '/login', query: { redirect: to.fullPath } }
+  }
+  if (auth.user && to.meta.roles && !to.meta.roles.includes(auth.user.role)) {
+    return '/forbidden'
   }
   if (to.path === '/login' && auth.user) {
     return '/home'

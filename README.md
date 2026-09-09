@@ -64,7 +64,7 @@ mysql -u root -p < database/migration_v2.sql
 ```
 
 ### 2. 启动后端
-1. 修改 `backend/src/main/resources/application.yml` 里的 `spring.datasource.password` 为你的 MySQL root 密码。
+1. 默认数据库账号为 `root / 123456789`；如本机不同，可设置 `DB_URL`、`DB_USERNAME`、`DB_PASSWORD`，或修改 `application.yml`。
 2. 启动：
 ```bash
 cd backend
@@ -93,16 +93,35 @@ npm run dev
 
 ## 已实现的核心功能
 
-1. HttpSession 登录、会话恢复、退出和管理员权限控制。
+1. HttpSession 登录、会话恢复、退出和管理员权限控制；兼容旧 MD5 密码并在成功登录后自动升级为 BCrypt。
 2. 会员分页检索、建档、编辑、启停、手机号唯一校验。
 3. 会员等级折扣、消费积分和按积分阈值自动升级。
 4. 会员充值、余额更新和充值流水事务一致性。
 5. 球桌空闲/使用中/维护看板，重复开台保护。
 6. 整小时进位结账、现金/余额支付、折扣、积分、账单与消费流水。
-7. 充值流水和消费流水分页查询。
-8. 访问、业务操作、SQL 和异常的滚动文件日志，日志请求使用 `X-Request-Id` 关联。
+7. 充值流水和消费流水分页查询，支持日期、支付方式、操作员筛选及 UTF-8 CSV 导出。
+8. 管理员经营报表：消费收入、充值实收、优惠、客群、支付方式、每日趋势和球桌利用率。
+9. 访问、业务操作、SQL 和异常的滚动文件日志，日志请求使用 `X-Request-Id` 关联。
 
-商品销售、复杂报表、员工管理和优惠活动仍属于扩展范围。
+商品销售、员工账号管理、优惠活动和跨门店报表仍属于扩展范围。
+
+### 权限说明
+
+| 功能 | 管理员 | 前台 |
+|---|---|---|
+| 会员、充值、开台、结账、流水查询与导出 | 可以 | 可以 |
+| 球桌维护状态 | 可以 | 不可以（HTTP 403） |
+| 经营报表 | 可以 | 不可以（HTTP 403） |
+
+### 成员 C 接口
+
+- `POST /api/auth/login`、`GET /api/auth/me`、`POST /api/auth/logout`
+- `GET /api/records/recharges`、`GET /api/records/consumptions`：支持 `keyword`、`startDate`、`endDate`、`payWay`、`operatorId`
+- `GET /api/records/operators`：流水操作员筛选项
+- `GET /api/records/recharges/export`、`GET /api/records/consumptions/export`：按当前条件导出 CSV
+- `GET /api/reports/overview`：管理员经营报表，日期范围最多 366 天
+
+报表中“消费收入”取已结账账单实收金额，“充值实收”只取充值本金、不含赠送。球桌利用率按非取消开台与查询区间重叠的实际分钟数计算；当前库没有维护时段历史，因此维护时间不从分母扣除。
 
 ## 日志
 
@@ -123,6 +142,7 @@ mvn test
 mvn package
 
 cd ../frontend
+npm run test
 npm run build
 ```
 

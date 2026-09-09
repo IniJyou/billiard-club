@@ -15,6 +15,7 @@ body {
   -webkit-font-smoothing: antialiased;
   color: #303842;
   background: #f4f6f8;
+  font-size: 16px;
 }
 
 button,
@@ -26,3 +27,14 @@ input {
   --el-card-border-color: #e6e9ed;
   border-radius: 12px;
 }
+
+:root {
+  --el-color-primary: #16865f;
+  --el-color-primary-light-3: #58a989;
+  --el-color-primary-light-5: #8bc5ae;
+  --el-color-primary-light-7: #b9ddcf;
+  --el-color-primary-light-9: #e9f5f0;
+  --el-color-primary-dark-2: #116b4c;
+}
+
+.el-table { --el-table-header-bg-color: #f7faf8; --el-table-header-text-color: #506159; }

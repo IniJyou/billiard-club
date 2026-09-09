@@ -1,6 +1,7 @@
 package com.club.config;
 
 import com.club.common.AdminOnly;
+import com.club.common.BizConstants;
 import com.club.common.Result;
 import com.club.common.SessionKeys;
 import com.club.dto.LoginUser;
@@ -47,7 +48,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (handler instanceof HandlerMethod method
                 && (method.hasMethodAnnotation(AdminOnly.class)
                 || method.getBeanType().isAnnotationPresent(AdminOnly.class))
-                && user.getRole() != 1) {
+                && !Integer.valueOf(BizConstants.ROLE_ADMIN).equals(user.getRole())) {
             log.warn("event=access_denied reason=forbidden userId={} username={} method={} path={}",
                     user.getId(), user.getUsername(), request.getMethod(), request.getRequestURI());
             writeError(response, 403, "当前账号没有管理员权限");

@@ -7,9 +7,16 @@ const request = axios.create({
   withCredentials: true
 })
 
+let unauthorizedHandler = null
+
+export function setUnauthorizedHandler(handler) {
+  unauthorizedHandler = handler
+}
+
 // 响应拦截：后端统一返回 { code, message, data }
 request.interceptors.response.use(
   (response) => {
+    if (response.config.responseType === 'blob') return response
     const res = response.data
     if (res.code !== 200) {
       return Promise.reject(new Error(res.message || '请求失败'))
@@ -22,6 +29,7 @@ request.interceptors.response.use(
     const normalizedError = new Error(message)
     normalizedError.status = status
     if (status === 401 && window.location.pathname !== '/login') {
+      unauthorizedHandler?.()
       window.location.replace('/login')
     }
     return Promise.reject(normalizedError)
