@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts/core'
 import { BarChart, LineChart, PieChart } from 'echarts/charts'
 import { AriaComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
@@ -21,23 +21,47 @@ const props = defineProps({
 })
 const chartRef = ref()
 let chart
+let resizeObserver
+let resizeFrame
+
+const requestFrame = callback => window.requestAnimationFrame
+  ? window.requestAnimationFrame(callback)
+  : window.setTimeout(callback, 0)
+const cancelFrame = frame => window.cancelAnimationFrame
+  ? window.cancelAnimationFrame(frame)
+  : window.clearTimeout(frame)
 
 function render() {
   if (!chartRef.value || props.empty) return
   chart ||= echarts.init(chartRef.value)
   chart.setOption({ aria: { enabled: true }, ...props.option }, true)
+  scheduleResize()
 }
 
 function resize() { chart?.resize() }
 
+function scheduleResize() {
+  if (resizeFrame != null) cancelFrame(resizeFrame)
+  resizeFrame = requestFrame(() => {
+    resizeFrame = null
+    resize()
+  })
+}
+
 onMounted(() => {
-  render()
-  window.addEventListener('resize', resize)
+  nextTick(render)
+  window.addEventListener('resize', scheduleResize)
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(scheduleResize)
+    resizeObserver.observe(chartRef.value)
+  }
 })
-watch(() => props.option, render, { deep: true })
-watch(() => props.empty, (empty) => { if (!empty) setTimeout(render) })
+watch(() => props.option, () => nextTick(render), { deep: true })
+watch(() => props.empty, (empty) => { if (!empty) nextTick(render) })
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', resize)
+  window.removeEventListener('resize', scheduleResize)
+  resizeObserver?.disconnect()
+  if (resizeFrame != null) cancelFrame(resizeFrame)
   chart?.dispose()
 })
 </script>

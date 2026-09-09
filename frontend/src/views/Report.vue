@@ -129,11 +129,11 @@ function pieOption(seriesData, colors) {
       label: { formatter: '{b}\n{d}%' }, data: seriesData }] }
 }
 const tableOption = computed(() => ({
-  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: items => `${items[0].name}<br/>使用 ${items[0].value} 分钟` },
+  tooltip: { trigger: 'axis', confine: true, axisPointer: { type: 'shadow' }, formatter: items => `${items[0].name}<br/>使用 ${items[0].value} 分钟` },
   grid: { left: 24, right: 30, top: 12, bottom: 22, containLabel: true },
   xAxis: { type: 'value', name: '分钟', splitLine: { lineStyle: { color: '#edf1ef' } } },
   yAxis: { type: 'category', data: data.value.tableUsage.map(item => item.tableNo) },
-  series: [{ type: 'bar', data: data.value.tableUsage.map(item => item.usedMinutes), barMaxWidth: 26,
+  series: [{ type: 'bar', data: data.value.tableUsage.map(item => item.usedMinutes), barMaxWidth: 26, barMinHeight: 4,
     itemStyle: { color: '#16865f', borderRadius: [0, 5, 5, 0] } }]
 }))
 

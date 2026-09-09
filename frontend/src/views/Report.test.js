@@ -28,4 +28,18 @@ describe('Report view', () => {
     await flushPromises()
     expect(wrapper.findComponent({ name: 'ElAlert' }).props('title')).toBe('报表加载失败')
   })
+
+  it('keeps short table usage visible and confines its tooltip', async () => {
+    mocks.getReportOverview.mockResolvedValue({
+      data: { ...emptyReport, tableUsage: [{ tableNo: 'A01', usedMinutes: 1 }] }
+    })
+    const wrapper = shallowMount(Report, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+
+    expect(wrapper.vm.tableOption.tooltip.confine).toBe(true)
+    expect(wrapper.vm.tableOption.series[0].barMinHeight).toBe(4)
+    expect(wrapper.vm.tableOption.series[0].data).toEqual([1])
+    expect(wrapper.vm.tableOption.tooltip.formatter([{ name: 'A01', value: 1 }]))
+      .toContain('使用 1 分钟')
+  })
 })
