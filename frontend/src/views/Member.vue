@@ -23,18 +23,19 @@
         <el-table-column prop="points" label="积分" width="90" />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'">
-              {{ row.status === 1 ? '正常' : '停用' }}
+            <el-tag :type="statusType(row.status)">
+              {{ statusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="230" fixed="right">
+        <el-table-column label="操作" min-width="280" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-button link type="success" :disabled="row.status !== 1" @click="openRecharge(row)">充值</el-button>
             <el-button link :type="row.status === 1 ? 'danger' : 'warning'" @click="toggleStatus(row)">
               {{ row.status === 1 ? '停用' : '启用' }}
             </el-button>
+            <el-button link type="danger" @click="cancelMember(row)">注销</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -100,6 +101,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
+  cancelMembership,
   createMember,
   getMemberLevels,
   getMembers,
@@ -190,13 +192,28 @@ async function saveMember() {
 
 async function toggleStatus(row) {
   const nextStatus = row.status === 1 ? 0 : 1
-  await ElMessageBox.confirm(`确定${nextStatus === 1 ? '启用' : '停用'}会员“${row.name}”吗？`, '状态确认')
   try {
+    await ElMessageBox.confirm(`确定${nextStatus === 1 ? '启用' : '停用'}会员“${row.name}”吗？`, '状态确认')
     await updateMemberStatus(row.id, nextStatus)
     ElMessage.success('会员状态已更新')
     await load()
   } catch (error) {
-    ElMessage.error(error.message)
+    if (error !== 'cancel' && error !== 'close') ElMessage.error(error.message)
+  }
+}
+
+async function cancelMember(row) {
+  try {
+    await ElMessageBox.confirm(
+      `请确认会员“${row.name}”本人已到现场。注销后当前会员卡及卡号立即失效，账户余额不影响注销，用户可重新办理新卡。`,
+      '会员注销确认',
+      { type: 'warning', confirmButtonText: '确认注销', cancelButtonText: '取消' }
+    )
+    await cancelMembership(row.id)
+    ElMessage.success('会员已注销')
+    await load()
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') ElMessage.error(error.message || '注销失败')
   }
 }
 
@@ -228,6 +245,14 @@ function money(value) {
 
 function discountText(value) {
   return Number(value) === 1 ? '无折扣' : `${Number(value) * 10}折`
+}
+
+function statusText(status) {
+  return ({ 0: '停用', 1: '正常', 2: '已注销' })[status] || '未知'
+}
+
+function statusType(status) {
+  return ({ 0: 'info', 1: 'success', 2: 'danger' })[status] || 'info'
 }
 </script>
 

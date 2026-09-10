@@ -16,6 +16,10 @@ export function updateMemberStatus(id, status) {
   return request.patch(`/members/${id}/status`, { status })
 }
 
+export function cancelMembership(id) {
+  return request.post(`/members/${id}/cancel`)
+}
+
 export function rechargeMember(id, payload) {
   return request.post(`/members/${id}/recharges`, payload)
 }

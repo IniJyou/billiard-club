@@ -10,8 +10,8 @@
           <div><strong>{{ pageTitle }}</strong><span>台球厅会员管理系统</span></div>
         </div>
         <div class="user-area">
-          <el-tag :type="auth.isAdmin ? 'danger' : 'info'" effect="plain">
-            {{ auth.isAdmin ? '管理员' : '前台' }}
+          <el-tag :type="auth.isAdmin ? 'danger' : auth.isUser ? 'success' : 'info'" effect="plain">
+            {{ roleName }}
           </el-tag>
           <span class="user-name">{{ auth.user?.realName || auth.user?.username }}</span>
           <el-button link type="primary" @click="handleLogout">退出登录</el-button>
@@ -39,9 +39,13 @@ const auth = useAuthStore()
 const drawerOpen = ref(false)
 const titles = {
   '/home': '工作台', '/members': '会员与充值', '/tables': '球桌与结账',
-  '/records': '业务流水', '/reports': '经营报表', '/forbidden': '访问受限'
+  '/reservations': '当天预约', '/records': '业务流水', '/reports': '经营报表',
+  '/user/home': '用户首页', '/user/membership': '我的会员',
+  '/user/reservations': '当天预约', '/user/records': '我的流水',
+  '/user/profile': '个人资料', '/forbidden': '访问受限'
 }
 const pageTitle = computed(() => titles[route.path] || '台球厅管理')
+const roleName = computed(() => auth.isAdmin ? '管理员' : auth.isUser ? '用户' : '前台')
 
 async function handleLogout() {
   await auth.logout()

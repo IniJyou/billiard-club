@@ -50,4 +50,17 @@ public interface ConsumptionRecordMapper extends BaseMapper<ConsumptionRecord> {
                                                @Param("endTime") LocalDateTime endTime,
                                                @Param("payWay") Integer payWay,
                                                @Param("operatorId") Long operatorId);
+
+    @Select("""
+            SELECT cr.id, cr.member_id, m.card_no AS member_card_no, m.name AS member_name,
+                   cr.bill_id, ob.bill_no, cr.type, cr.item_name, cr.amount,
+                   ob.pay_way, ob.operator_id, su.real_name AS operator_name, cr.create_time
+            FROM consumption_record cr
+            LEFT JOIN member m ON m.id = cr.member_id
+            LEFT JOIN order_bill ob ON ob.id = cr.bill_id
+            LEFT JOIN sys_user su ON su.id = ob.operator_id
+            WHERE cr.member_id = #{memberId}
+            ORDER BY cr.id DESC
+            """)
+    List<ConsumptionRecordView> selectByMemberId(@Param("memberId") Long memberId);
 }

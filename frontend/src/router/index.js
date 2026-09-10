@@ -10,11 +10,17 @@ const routes = [
     redirect: '/home',
     meta: { requiresAuth: true },
     children: [
-      { path: 'home', name: 'Home', component: () => import('../views/Home.vue') },
-      { path: 'members', name: 'Members', component: () => import('../views/Member.vue') },
-      { path: 'tables', name: 'Tables', component: () => import('../views/Table.vue') },
-      { path: 'records', name: 'Records', component: () => import('../views/Record.vue') },
+      { path: 'home', name: 'Home', component: () => import('../views/Home.vue'), meta: { roles: [1, 2] } },
+      { path: 'members', name: 'Members', component: () => import('../views/Member.vue'), meta: { roles: [1, 2] } },
+      { path: 'tables', name: 'Tables', component: () => import('../views/Table.vue'), meta: { roles: [1, 2] } },
+      { path: 'records', name: 'Records', component: () => import('../views/Record.vue'), meta: { roles: [1, 2] } },
+      { path: 'reservations', name: 'StaffReservations', component: () => import('../views/StaffReservation.vue'), meta: { roles: [1, 2] } },
       { path: 'reports', name: 'Reports', component: () => import('../views/Report.vue'), meta: { roles: [1] } },
+      { path: 'user/home', name: 'UserHome', component: () => import('../views/UserHome.vue'), meta: { roles: [3] } },
+      { path: 'user/membership', name: 'UserMembership', component: () => import('../views/UserMembership.vue'), meta: { roles: [3] } },
+      { path: 'user/reservations', name: 'UserReservations', component: () => import('../views/UserReservation.vue'), meta: { roles: [3] } },
+      { path: 'user/records', name: 'UserRecords', component: () => import('../views/UserRecords.vue'), meta: { roles: [3] } },
+      { path: 'user/profile', name: 'UserProfile', component: () => import('../views/UserProfile.vue'), meta: { roles: [3] } },
       { path: 'forbidden', name: 'Forbidden', component: () => import('../views/Forbidden.vue') }
     ]
   }
@@ -32,11 +38,14 @@ router.beforeEach(async (to) => {
   if (requiresAuth && !auth.user) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
+  if (to.path === '/home' && auth.isUser) {
+    return '/user/home'
+  }
   if (auth.user && to.meta.roles && !to.meta.roles.includes(auth.user.role)) {
     return '/forbidden'
   }
   if (to.path === '/login' && auth.user) {
-    return '/home'
+    return auth.defaultPath
   }
   return true
 })

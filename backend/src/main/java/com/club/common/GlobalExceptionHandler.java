@@ -6,6 +6,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -44,6 +45,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({BindException.class, MethodArgumentTypeMismatchException.class})
     public ResponseEntity<Result<Void>> handleBinding(Exception e) {
         return ResponseEntity.badRequest().body(Result.error(400, "查询参数格式不正确"));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Result<Void>> handleUnreadable(HttpMessageNotReadableException e) {
+        return ResponseEntity.badRequest().body(Result.error(400, "请求内容或日期格式不正确"));
     }
 
     @ExceptionHandler(DuplicateKeyException.class)

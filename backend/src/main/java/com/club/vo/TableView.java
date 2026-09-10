@@ -7,6 +7,8 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 @Data
 public class TableView {
@@ -21,6 +23,7 @@ public class TableView {
     private Long memberId;
     private String memberName;
     private LocalDateTime startTime;
+    private List<TableReservationSlotView> todayReservations = Collections.emptyList();
 
     public static TableView from(BilliardTable table, TableSession session, Member member) {
         TableView view = new TableView();

@@ -4,6 +4,8 @@ import com.club.common.AdminOnly;
 import com.club.common.BizConstants;
 import com.club.common.Result;
 import com.club.common.SessionKeys;
+import com.club.common.StaffOnly;
+import com.club.common.UserOnly;
 import com.club.dto.LoginUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,14 +47,31 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        if (handler instanceof HandlerMethod method
-                && (method.hasMethodAnnotation(AdminOnly.class)
-                || method.getBeanType().isAnnotationPresent(AdminOnly.class))
-                && !Integer.valueOf(BizConstants.ROLE_ADMIN).equals(user.getRole())) {
+        if (handler instanceof HandlerMethod method && !hasPermission(method, user)) {
             log.warn("event=access_denied reason=forbidden userId={} username={} method={} path={}",
                     user.getId(), user.getUsername(), request.getMethod(), request.getRequestURI());
-            writeError(response, 403, "当前账号没有管理员权限");
+            writeError(response, 403, "当前账号没有访问该功能的权限");
             return false;
+        }
+        return true;
+    }
+
+    private boolean hasPermission(HandlerMethod method, LoginUser user) {
+        boolean adminOnly = method.hasMethodAnnotation(AdminOnly.class)
+                || method.getBeanType().isAnnotationPresent(AdminOnly.class);
+        boolean staffOnly = method.hasMethodAnnotation(StaffOnly.class)
+                || method.getBeanType().isAnnotationPresent(StaffOnly.class);
+        boolean userOnly = method.hasMethodAnnotation(UserOnly.class)
+                || method.getBeanType().isAnnotationPresent(UserOnly.class);
+        if (adminOnly) {
+            return Integer.valueOf(BizConstants.ROLE_ADMIN).equals(user.getRole());
+        }
+        if (staffOnly) {
+            return Integer.valueOf(BizConstants.ROLE_ADMIN).equals(user.getRole())
+                    || Integer.valueOf(BizConstants.ROLE_CASHIER).equals(user.getRole());
+        }
+        if (userOnly) {
+            return Integer.valueOf(BizConstants.ROLE_USER).equals(user.getRole());
         }
         return true;
     }

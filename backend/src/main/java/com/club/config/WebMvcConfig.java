@@ -22,7 +22,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .order(0);
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/login", "/error")
+                .excludePathPatterns("/api/auth/login", "/api/auth/register", "/error")
                 .order(1);
     }
 }

@@ -10,9 +10,11 @@ import com.club.dto.MemberSaveRequest;
 import com.club.dto.MemberStatusRequest;
 import com.club.entity.Member;
 import com.club.entity.MemberLevel;
+import com.club.entity.TableReservation;
 import com.club.entity.TableSession;
 import com.club.mapper.MemberLevelMapper;
 import com.club.mapper.MemberMapper;
+import com.club.mapper.TableReservationMapper;
 import com.club.mapper.TableSessionMapper;
 import com.club.service.MemberService;
 import com.club.util.OrderNoGenerator;
@@ -34,19 +36,23 @@ public class MemberServiceImpl implements MemberService {
     private final MemberMapper memberMapper;
     private final MemberLevelMapper levelMapper;
     private final TableSessionMapper sessionMapper;
+    private final TableReservationMapper reservationMapper;
 
     public MemberServiceImpl(MemberMapper memberMapper, MemberLevelMapper levelMapper,
-                             TableSessionMapper sessionMapper) {
+                             TableSessionMapper sessionMapper,
+                             TableReservationMapper reservationMapper) {
         this.memberMapper = memberMapper;
         this.levelMapper = levelMapper;
         this.sessionMapper = sessionMapper;
+        this.reservationMapper = reservationMapper;
     }
 
     @Override
     public PageResult<MemberView> page(Long pageValue, Long pageSizeValue, String keyword) {
         long page = NumberUtils.positivePage(pageValue, 1);
         long pageSize = NumberUtils.pageSize(pageSizeValue);
-        var query = Wrappers.<Member>lambdaQuery();
+        var query = Wrappers.<Member>lambdaQuery()
+                .ne(Member::getStatus, BizConstants.MEMBER_CANCELLED);
         if (StringUtils.hasText(keyword)) {
             String value = keyword.trim();
             query.and(wrapper -> wrapper.like(Member::getName, value)
@@ -104,6 +110,9 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public void updateStatus(Long id, MemberStatusRequest request) {
         Member member = requireMember(id);
+        if (Integer.valueOf(BizConstants.MEMBER_CANCELLED).equals(member.getStatus())) {
+            throw new BusinessException(409, "已注销会员不能恢复");
+        }
         if (request.getStatus() == BizConstants.DISABLED) {
             Long activeCount = sessionMapper.selectCount(Wrappers.<TableSession>lambdaQuery()
                     .eq(TableSession::getMemberId, id)
@@ -115,6 +124,40 @@ public class MemberServiceImpl implements MemberService {
         member.setStatus(request.getStatus());
         member.setUpdateTime(LocalDateTime.now());
         memberMapper.updateById(member);
+    }
+
+    @Override
+    @Transactional
+    public void cancelMembership(Long id) {
+        Member member = memberMapper.selectByIdForUpdate(id);
+        if (member == null) {
+            throw new BusinessException(404, "会员不存在");
+        }
+        if (Integer.valueOf(BizConstants.MEMBER_CANCELLED).equals(member.getStatus())) {
+            throw new BusinessException(409, "该会员已经注销");
+        }
+        ensureCanCancel(member);
+        member.setStatus(BizConstants.MEMBER_CANCELLED);
+        member.setUserId(null);
+        member.setPhone(null);
+        member.setUpdateTime(LocalDateTime.now());
+        memberMapper.updateById(member);
+        memberMapper.releaseAccountBinding(member.getId());
+    }
+
+    private void ensureCanCancel(Member member) {
+        long activeSessions = sessionMapper.selectCount(Wrappers.<TableSession>lambdaQuery()
+                .eq(TableSession::getMemberId, member.getId())
+                .eq(TableSession::getStatus, BizConstants.SESSION_ACTIVE));
+        if (activeSessions > 0) {
+            throw new BusinessException(409, "会员存在进行中的开台订单，不能注销");
+        }
+        long pendingReservations = reservationMapper.selectCount(Wrappers.<TableReservation>lambdaQuery()
+                .eq(TableReservation::getMemberId, member.getId())
+                .eq(TableReservation::getStatus, BizConstants.RESERVATION_PENDING));
+        if (pendingReservations > 0) {
+            throw new BusinessException(409, "会员存在待处理预约，请先取消预约");
+        }
     }
 
     private Member requireMember(Long id) {

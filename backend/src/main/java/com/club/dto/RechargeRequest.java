@@ -1,6 +1,7 @@
 package com.club.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ import java.math.BigDecimal;
 public class RechargeRequest {
     @NotNull(message = "请输入充值金额")
     @DecimalMin(value = "0.01", message = "充值金额必须大于0")
+    @DecimalMax(value = "99999.99", message = "单次充值金额不能超过99999.99元")
     private BigDecimal amount;
 
     @DecimalMin(value = "0.00", message = "赠送金额不能小于0")

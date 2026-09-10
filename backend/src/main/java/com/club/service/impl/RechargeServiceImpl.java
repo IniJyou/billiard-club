@@ -36,7 +36,7 @@ public class RechargeServiceImpl implements RechargeService {
             throw new BusinessException(404, "会员不存在");
         }
         if (!Integer.valueOf(BizConstants.ENABLED).equals(member.getStatus())) {
-            throw new BusinessException("会员已停用，不能充值");
+            throw new BusinessException("会员已注销或停用，不能充值");
         }
 
         BigDecimal amount = request.getAmount().setScale(2, RoundingMode.HALF_UP);

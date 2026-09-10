@@ -2,6 +2,7 @@ package com.club.controller;
 
 import com.club.common.PageResult;
 import com.club.common.Result;
+import com.club.common.StaffOnly;
 import com.club.dto.RecordQuery;
 import com.club.service.RecordService;
 import com.club.vo.ConsumptionRecordView;
@@ -22,6 +23,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/records")
+@StaffOnly
 public class RecordController {
 
     private final RecordService recordService;

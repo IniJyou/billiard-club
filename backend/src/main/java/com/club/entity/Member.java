@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -13,9 +14,12 @@ import java.time.LocalDateTime;
 public class Member {
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long userId;
     private String cardNo;
     private String name;
     private String phone;
+    private Integer gender;
+    private LocalDate birthday;
     private Integer levelId;
     private BigDecimal balance;
     private Integer points;

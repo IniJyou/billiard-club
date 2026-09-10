@@ -1,6 +1,7 @@
 package com.club.controller;
 
 import com.club.common.Result;
+import com.club.common.StaffOnly;
 import com.club.entity.MemberLevel;
 import com.club.service.MemberLevelService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/member-levels")
+@StaffOnly
 public class MemberLevelController {
 
     private final MemberLevelService levelService;

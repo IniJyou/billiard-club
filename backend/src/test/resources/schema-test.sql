@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS consumption_record;
 DROP TABLE IF EXISTS order_bill;
 DROP TABLE IF EXISTS recharge_record;
+DROP TABLE IF EXISTS table_reservation;
 DROP TABLE IF EXISTS table_session;
 DROP TABLE IF EXISTS member;
 DROP TABLE IF EXISTS billiard_table;
@@ -27,16 +28,20 @@ CREATE TABLE member_level (
 
 CREATE TABLE member (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNIQUE,
   card_no VARCHAR(20) NOT NULL UNIQUE,
   name VARCHAR(50) NOT NULL,
   phone VARCHAR(20) UNIQUE,
+  gender TINYINT,
+  birthday DATE,
   level_id INT NOT NULL,
   balance DECIMAL(10,2) NOT NULL DEFAULT 0,
   points INT NOT NULL DEFAULT 0,
   status TINYINT NOT NULL DEFAULT 1,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_test_member_level FOREIGN KEY (level_id) REFERENCES member_level(id)
+  CONSTRAINT fk_test_member_level FOREIGN KEY (level_id) REFERENCES member_level(id),
+  CONSTRAINT fk_test_member_user FOREIGN KEY (user_id) REFERENCES sys_user(id)
 );
 
 CREATE TABLE billiard_table (
@@ -61,6 +66,25 @@ CREATE TABLE table_session (
   CONSTRAINT fk_test_session_table FOREIGN KEY (table_id) REFERENCES billiard_table(id),
   CONSTRAINT fk_test_session_member FOREIGN KEY (member_id) REFERENCES member(id),
   CONSTRAINT fk_test_session_operator FOREIGN KEY (operator_id) REFERENCES sys_user(id)
+);
+
+CREATE TABLE table_reservation (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  reservation_no VARCHAR(30) NOT NULL UNIQUE,
+  user_id BIGINT NOT NULL,
+  member_id BIGINT NOT NULL,
+  table_id INT NOT NULL,
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP NOT NULL,
+  status TINYINT NOT NULL,
+  session_id BIGINT UNIQUE,
+  remark VARCHAR(200),
+  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  cancel_time TIMESTAMP,
+  CONSTRAINT fk_test_reservation_user FOREIGN KEY (user_id) REFERENCES sys_user(id),
+  CONSTRAINT fk_test_reservation_member FOREIGN KEY (member_id) REFERENCES member(id),
+  CONSTRAINT fk_test_reservation_table FOREIGN KEY (table_id) REFERENCES billiard_table(id),
+  CONSTRAINT fk_test_reservation_session FOREIGN KEY (session_id) REFERENCES table_session(id)
 );
 
 CREATE TABLE recharge_record (

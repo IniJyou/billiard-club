@@ -6,15 +6,20 @@ import com.club.common.BusinessException;
 import com.club.dto.TableStatusRequest;
 import com.club.entity.BilliardTable;
 import com.club.entity.Member;
+import com.club.entity.TableReservation;
 import com.club.entity.TableSession;
 import com.club.mapper.BilliardTableMapper;
 import com.club.mapper.MemberMapper;
+import com.club.mapper.TableReservationMapper;
 import com.club.mapper.TableSessionMapper;
 import com.club.service.TableService;
+import com.club.vo.TableReservationSlotView;
 import com.club.vo.TableView;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -27,12 +32,14 @@ public class TableServiceImpl implements TableService {
     private final BilliardTableMapper tableMapper;
     private final TableSessionMapper sessionMapper;
     private final MemberMapper memberMapper;
+    private final TableReservationMapper reservationMapper;
 
     public TableServiceImpl(BilliardTableMapper tableMapper, TableSessionMapper sessionMapper,
-                            MemberMapper memberMapper) {
+                            MemberMapper memberMapper, TableReservationMapper reservationMapper) {
         this.tableMapper = tableMapper;
         this.sessionMapper = sessionMapper;
         this.memberMapper = memberMapper;
+        this.reservationMapper = reservationMapper;
     }
 
     @Override
@@ -48,10 +55,24 @@ public class TableServiceImpl implements TableService {
         Map<Long, Member> members = memberIds.isEmpty() ? Collections.emptyMap()
                 : memberMapper.selectBatchIds(memberIds).stream()
                 .collect(Collectors.toMap(Member::getId, Function.identity()));
+        LocalDateTime dayStart = LocalDate.now().atStartOfDay();
+        LocalDateTime dayEnd = dayStart.plusDays(1);
+        Map<Integer, List<TableReservationSlotView>> reservationsByTable = reservationMapper
+                .selectList(Wrappers.<TableReservation>lambdaQuery()
+                        .in(TableReservation::getStatus,
+                                BizConstants.RESERVATION_PENDING, BizConstants.RESERVATION_OPENED)
+                        .lt(TableReservation::getStartTime, dayEnd)
+                        .gt(TableReservation::getEndTime, dayStart)
+                        .orderByAsc(TableReservation::getStartTime))
+                .stream()
+                .collect(Collectors.groupingBy(TableReservation::getTableId,
+                        Collectors.mapping(TableReservationSlotView::from, Collectors.toList())));
         return tables.stream().map(table -> {
             TableSession session = sessionByTable.get(table.getId());
             Member member = session == null ? null : members.get(session.getMemberId());
-            return TableView.from(table, session, member);
+            TableView view = TableView.from(table, session, member);
+            view.setTodayReservations(reservationsByTable.getOrDefault(table.getId(), Collections.emptyList()));
+            return view;
         }).toList();
     }
 

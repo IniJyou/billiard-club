@@ -15,6 +15,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `consumption_record`;
 DROP TABLE IF EXISTS `order_bill`;
 DROP TABLE IF EXISTS `recharge_record`;
+DROP TABLE IF EXISTS `table_reservation`;
 DROP TABLE IF EXISTS `table_session`;
 DROP TABLE IF EXISTS `member`;
 DROP TABLE IF EXISTS `billiard_table`;
@@ -31,7 +32,7 @@ CREATE TABLE `sys_user` (
   `username`    VARCHAR(50)  NOT NULL COMMENT '登录名',
   `password`    VARCHAR(100) NOT NULL COMMENT '密码(MD5)',
   `real_name`   VARCHAR(50)  DEFAULT NULL COMMENT '真实姓名',
-  `role`        TINYINT      NOT NULL DEFAULT 2 COMMENT '角色:1管理员 2前台',
+  `role`        TINYINT      NOT NULL DEFAULT 2 COMMENT '角色:1管理员 2前台 3用户',
   `status`      TINYINT      NOT NULL DEFAULT 1 COMMENT '状态:1启用 0禁用',
   `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
@@ -55,18 +56,23 @@ CREATE TABLE `member_level` (
 -- =====================================================================
 CREATE TABLE `member` (
   `id`          BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id`     BIGINT        DEFAULT NULL COMMENT '绑定的用户账号ID',
   `card_no`     VARCHAR(20)   NOT NULL COMMENT '会员卡号',
   `name`        VARCHAR(50)   NOT NULL COMMENT '姓名',
   `phone`       VARCHAR(20)   DEFAULT NULL COMMENT '手机号',
+  `gender`      TINYINT       DEFAULT NULL COMMENT '性别:0保密 1男 2女',
+  `birthday`    DATE          DEFAULT NULL COMMENT '出生日期',
   `level_id`    INT           NOT NULL DEFAULT 1 COMMENT '等级ID',
   `balance`     DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '余额',
   `points`      INT           NOT NULL DEFAULT 0 COMMENT '积分',
-  `status`      TINYINT       NOT NULL DEFAULT 1 COMMENT '状态:1正常 0挂失/停用',
+  `status`      TINYINT       NOT NULL DEFAULT 1 COMMENT '状态:1正常 0挂失/停用 2已注销',
   `create_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_card_no` (`card_no`),
+  UNIQUE KEY `uk_member_user` (`user_id`),
   UNIQUE KEY `uk_phone` (`phone`),
+  CONSTRAINT `fk_member_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`),
   CONSTRAINT `fk_member_level` FOREIGN KEY (`level_id`) REFERENCES `member_level` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员表';
 
@@ -107,7 +113,34 @@ CREATE TABLE `table_session` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='开台订单表';
 
 -- =====================================================================
--- 6. 结账单表
+-- 6. 球桌预约表
+-- =====================================================================
+CREATE TABLE `table_reservation` (
+  `id`             BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `reservation_no` VARCHAR(30)  NOT NULL COMMENT '预约单号',
+  `user_id`        BIGINT       NOT NULL COMMENT '用户账号ID',
+  `member_id`      BIGINT       NOT NULL COMMENT '会员ID',
+  `table_id`       INT          NOT NULL COMMENT '球桌ID',
+  `start_time`     DATETIME     NOT NULL COMMENT '预约开始时间',
+  `end_time`       DATETIME     NOT NULL COMMENT '预约结束时间',
+  `status`         TINYINT      NOT NULL DEFAULT 0 COMMENT '状态:0待处理 1已开台 2已完成 3已取消',
+  `session_id`     BIGINT       DEFAULT NULL COMMENT '转开台后的订单ID',
+  `remark`         VARCHAR(200) DEFAULT NULL COMMENT '备注',
+  `create_time`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `cancel_time`    DATETIME     DEFAULT NULL COMMENT '取消时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_reservation_no` (`reservation_no`),
+  UNIQUE KEY `uk_reservation_session` (`session_id`),
+  KEY `idx_reservation_table_time` (`table_id`, `start_time`, `end_time`),
+  KEY `idx_reservation_user` (`user_id`),
+  CONSTRAINT `fk_reservation_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`),
+  CONSTRAINT `fk_reservation_member` FOREIGN KEY (`member_id`) REFERENCES `member` (`id`),
+  CONSTRAINT `fk_reservation_table` FOREIGN KEY (`table_id`) REFERENCES `billiard_table` (`id`),
+  CONSTRAINT `fk_reservation_session` FOREIGN KEY (`session_id`) REFERENCES `table_session` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='球桌预约表';
+
+-- =====================================================================
+-- 7. 结账单表
 -- =====================================================================
 CREATE TABLE `order_bill` (
   `id`              BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -134,7 +167,7 @@ CREATE TABLE `order_bill` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='结账单表';
 
 -- =====================================================================
--- 7. 充值记录表
+-- 8. 充值记录表
 -- =====================================================================
 CREATE TABLE `recharge_record` (
   `id`          BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -154,7 +187,7 @@ CREATE TABLE `recharge_record` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='充值记录表';
 
 -- =====================================================================
--- 8. 消费流水表（台费/商品等消费明细）
+-- 9. 消费流水表（台费/商品等消费明细）
 -- =====================================================================
 CREATE TABLE `consumption_record` (
   `id`          BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -185,7 +218,8 @@ INSERT INTO `member_level` (`id`, `name`, `discount`, `points_threshold`) VALUES
 -- 系统用户：初始密码为 MD5("123456")，首次成功登录后由应用自动升级为 BCrypt
 INSERT INTO `sys_user` (`username`, `password`, `real_name`, `role`, `status`) VALUES
 ('admin',   'e10adc3949ba59abbe56e057f20f883e', '老板(管理员)', 1, 1),
-('cashier', 'e10adc3949ba59abbe56e057f20f883e', '前台小王',      2, 1);
+('cashier', 'e10adc3949ba59abbe56e057f20f883e', '前台小王',      2, 1),
+('13900000000', 'e10adc3949ba59abbe56e057f20f883e', '演示用户',    3, 1);
 
 -- 球桌：2 张斯诺克 + 3 张九球 + 3 张中式
 INSERT INTO `billiard_table` (`table_no`, `table_type`, `price_per_hour`, `status`) VALUES

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getCurrentUser, login as loginRequest, logout as logoutRequest } from '../api/auth'
+import { getCurrentUser, login as loginRequest, logout as logoutRequest, register as registerRequest } from '../api/auth'
 import { setUnauthorizedHandler } from '../api/request'
 
 export const useAuthStore = defineStore('auth', {
@@ -8,7 +8,10 @@ export const useAuthStore = defineStore('auth', {
     initialized: false
   }),
   getters: {
-    isAdmin: (state) => state.user?.role === 1
+    isAdmin: (state) => state.user?.role === 1,
+    isStaff: (state) => state.user?.role === 1 || state.user?.role === 2,
+    isUser: (state) => state.user?.role === 3,
+    defaultPath: (state) => state.user?.role === 3 ? '/user/home' : '/home'
   },
   actions: {
     async initialize() {
@@ -29,6 +32,12 @@ export const useAuthStore = defineStore('auth', {
     },
     async login(payload) {
       const response = await loginRequest(payload)
+      this.user = response.data
+      this.initialized = true
+      return this.user
+    },
+    async register(payload) {
+      const response = await registerRequest(payload)
       this.user = response.data
       this.initialized = true
       return this.user

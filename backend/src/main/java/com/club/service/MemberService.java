@@ -10,4 +10,5 @@ public interface MemberService {
     MemberView create(MemberSaveRequest request);
     MemberView update(Long id, MemberSaveRequest request);
     void updateStatus(Long id, MemberStatusRequest request);
+    void cancelMembership(Long id);
 }

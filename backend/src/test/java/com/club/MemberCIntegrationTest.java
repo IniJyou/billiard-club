@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -56,16 +57,22 @@ class MemberCIntegrationTest {
 
     @Test
     void calculatesReportMetricsFromBillsRechargesAndSessions() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reportTime = LocalDateTime.now().withSecond(0).withNano(0);
+        LocalDateTime sessionStart = reportTime.minusMinutes(60);
+        LocalDateTime dayStart = LocalDate.now().atStartOfDay();
+        if (sessionStart.isBefore(dayStart)) {
+            sessionStart = dayStart;
+        }
+        long expectedUsedMinutes = Duration.between(sessionStart, reportTime).toMinutes();
         jdbcTemplate.update("INSERT INTO member(id, card_no, name, phone, level_id, balance, points, status) " +
                 "VALUES (900, 'V900', '报表会员', '13990000900', 1, 0, 0, 1)");
         jdbcTemplate.update("INSERT INTO table_session(id, session_no, table_id, member_id, start_time, end_time, status, operator_id) " +
-                "VALUES (900, 'S900', 1, 900, ?, ?, 1, 1)", now.minusMinutes(120), now.minusMinutes(60));
+                "VALUES (900, 'S900', 1, 900, ?, ?, 1, 1)", sessionStart, reportTime);
         jdbcTemplate.update("INSERT INTO order_bill(id, bill_no, session_id, member_id, duration_hours, original_amount, " +
                         "discount_rate, discount_amount, final_amount, pay_way, points_earned, operator_id, create_time) " +
-                        "VALUES (900, 'B900', 900, 900, 1, 35, 0.85, 5, 30, 1, 30, 1, ?)", now.minusMinutes(60));
+                        "VALUES (900, 'B900', 900, 900, 1, 35, 0.85, 5, 30, 1, 30, 1, ?)", reportTime);
         jdbcTemplate.update("INSERT INTO recharge_record(id, record_no, member_id, amount, gift_amount, pay_way, operator_id, create_time) " +
-                "VALUES (900, 'R900', 900, 100, 10, 4, 1, ?)", now.minusMinutes(30));
+                "VALUES (900, 'R900', 900, 100, 10, 4, 1, ?)", reportTime);
 
         String today = LocalDate.now().toString();
         mockMvc.perform(get("/api/reports/overview").session(login("admin"))
@@ -76,7 +83,7 @@ class MemberCIntegrationTest {
                 .andExpect(jsonPath("$.data.summary.discountAmount").value(5.0))
                 .andExpect(jsonPath("$.data.summary.memberOrderCount").value(1))
                 .andExpect(jsonPath("$.data.dailyTrend[0].orderCount").value(1))
-                .andExpect(jsonPath("$.data.tableUsage[0].usedMinutes").value(60));
+                .andExpect(jsonPath("$.data.tableUsage[0].usedMinutes").value(expectedUsedMinutes));
     }
 
     @Test

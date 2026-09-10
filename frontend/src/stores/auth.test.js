@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
 const mocks = vi.hoisted(() => ({
-  getCurrentUser: vi.fn(), login: vi.fn(), logout: vi.fn(), setUnauthorizedHandler: vi.fn()
+  getCurrentUser: vi.fn(), login: vi.fn(), logout: vi.fn(), register: vi.fn(), setUnauthorizedHandler: vi.fn()
 }))
 vi.mock('../api/auth', () => ({
-  getCurrentUser: mocks.getCurrentUser, login: mocks.login, logout: mocks.logout
+  getCurrentUser: mocks.getCurrentUser, login: mocks.login, logout: mocks.logout, register: mocks.register
 }))
 vi.mock('../api/request', () => ({ setUnauthorizedHandler: mocks.setUnauthorizedHandler }))
 
@@ -31,5 +31,14 @@ describe('auth store', () => {
     store.user = { id: 2, role: 2 }
     await expect(store.logout()).rejects.toThrow('network')
     expect(store.user).toBeNull()
+  })
+
+  it('registers a user and selects the user portal as default path', async () => {
+    mocks.register.mockResolvedValue({ data: { id: 4, role: 3, username: '13800000000' } })
+    const store = useAuthStore()
+    await store.register({ realName: '测试用户', phone: '13800000000', password: '123456' })
+    expect(store.isUser).toBe(true)
+    expect(store.isStaff).toBe(false)
+    expect(store.defaultPath).toBe('/user/home')
   })
 })

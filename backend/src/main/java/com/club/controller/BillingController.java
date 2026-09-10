@@ -2,6 +2,7 @@ package com.club.controller;
 
 import com.club.common.Result;
 import com.club.common.SessionUtils;
+import com.club.common.StaffOnly;
 import com.club.dto.CheckoutRequest;
 import com.club.dto.OpenTableRequest;
 import com.club.entity.TableSession;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/sessions")
+@StaffOnly
 public class BillingController {
 
     private static final Logger log = LoggerFactory.getLogger(BillingController.class);

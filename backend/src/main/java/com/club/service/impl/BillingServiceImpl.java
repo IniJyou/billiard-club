@@ -17,6 +17,7 @@ import com.club.mapper.MemberLevelMapper;
 import com.club.mapper.MemberMapper;
 import com.club.mapper.OrderBillMapper;
 import com.club.mapper.TableSessionMapper;
+import com.club.mapper.TableReservationMapper;
 import com.club.service.BillingService;
 import com.club.util.BillingCalculator;
 import com.club.util.OrderNoGenerator;
@@ -37,16 +38,19 @@ public class BillingServiceImpl implements BillingService {
     private final MemberLevelMapper levelMapper;
     private final OrderBillMapper billMapper;
     private final ConsumptionRecordMapper consumptionMapper;
+    private final TableReservationMapper reservationMapper;
 
     public BillingServiceImpl(BilliardTableMapper tableMapper, TableSessionMapper sessionMapper,
                               MemberMapper memberMapper, MemberLevelMapper levelMapper,
-                              OrderBillMapper billMapper, ConsumptionRecordMapper consumptionMapper) {
+                              OrderBillMapper billMapper, ConsumptionRecordMapper consumptionMapper,
+                              TableReservationMapper reservationMapper) {
         this.tableMapper = tableMapper;
         this.sessionMapper = sessionMapper;
         this.memberMapper = memberMapper;
         this.levelMapper = levelMapper;
         this.billMapper = billMapper;
         this.consumptionMapper = consumptionMapper;
+        this.reservationMapper = reservationMapper;
     }
 
     @Override
@@ -95,6 +99,7 @@ public class BillingServiceImpl implements BillingService {
             table.setStatus(BizConstants.TABLE_IDLE);
             tableMapper.updateById(table);
         }
+        updateReservationStatus(sessionId, BizConstants.RESERVATION_CANCELLED);
     }
 
     @Override
@@ -168,8 +173,20 @@ public class BillingServiceImpl implements BillingService {
 
         table.setStatus(BizConstants.TABLE_IDLE);
         tableMapper.updateById(table);
+        updateReservationStatus(sessionId, BizConstants.RESERVATION_COMPLETED);
         return new CheckoutView(bill, member == null ? null : member.getBalance(),
                 member == null ? null : member.getPoints(), updatedLevel == null ? null : updatedLevel.getName());
+    }
+
+    private void updateReservationStatus(Long sessionId, int status) {
+        var reservation = reservationMapper.selectBySessionId(sessionId);
+        if (reservation != null && reservation.getStatus() == BizConstants.RESERVATION_OPENED) {
+            reservation.setStatus(status);
+            if (status == BizConstants.RESERVATION_CANCELLED) {
+                reservation.setCancelTime(LocalDateTime.now());
+            }
+            reservationMapper.updateById(reservation);
+        }
     }
 
     private TableSession requireActiveSession(Long sessionId) {

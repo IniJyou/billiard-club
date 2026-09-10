@@ -48,4 +48,16 @@ public interface RechargeRecordMapper extends BaseMapper<RechargeRecord> {
                                             @Param("endTime") LocalDateTime endTime,
                                             @Param("payWay") Integer payWay,
                                             @Param("operatorId") Long operatorId);
+
+    @Select("""
+            SELECT rr.id, rr.record_no, rr.member_id, m.card_no AS member_card_no,
+                   m.name AS member_name, rr.amount, rr.gift_amount, rr.pay_way,
+                   rr.operator_id, su.real_name AS operator_name, rr.create_time, rr.remark
+            FROM recharge_record rr
+            JOIN member m ON m.id = rr.member_id
+            JOIN sys_user su ON su.id = rr.operator_id
+            WHERE rr.member_id = #{memberId}
+            ORDER BY rr.id DESC
+            """)
+    List<RechargeRecordView> selectByMemberId(@Param("memberId") Long memberId);
 }

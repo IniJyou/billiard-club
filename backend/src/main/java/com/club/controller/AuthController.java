@@ -5,6 +5,9 @@ import com.club.common.Result;
 import com.club.common.SessionKeys;
 import com.club.dto.LoginRequest;
 import com.club.dto.LoginUser;
+import com.club.dto.RegisterRequest;
+import com.club.dto.ChangePasswordRequest;
+import com.club.common.SessionUtils;
 import com.club.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -39,6 +42,25 @@ public class AuthController {
         log.info("event=login_success userId={} username={} role={} ip={}",
                 user.getId(), user.getUsername(), user.getRole(), servletRequest.getRemoteAddr());
         return Result.success("登录成功", user);
+    }
+
+    @PostMapping("/register")
+    public Result<LoginUser> register(@Valid @RequestBody RegisterRequest request,
+                                      HttpServletRequest servletRequest) {
+        LoginUser user = authService.register(request);
+        HttpSession oldSession = servletRequest.getSession(false);
+        if (oldSession != null) {
+            oldSession.invalidate();
+        }
+        servletRequest.getSession(true).setAttribute(SessionKeys.LOGIN_USER, user);
+        return Result.success("注册成功", user);
+    }
+
+    @PostMapping("/password")
+    public Result<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request,
+                                       HttpSession session) {
+        authService.changePassword(SessionUtils.currentUser(session).getId(), request);
+        return Result.success("密码修改成功", null);
     }
 
     @GetMapping("/me")

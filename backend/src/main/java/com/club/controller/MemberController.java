@@ -3,6 +3,7 @@ package com.club.controller;
 import com.club.common.PageResult;
 import com.club.common.Result;
 import com.club.common.SessionUtils;
+import com.club.common.StaffOnly;
 import com.club.dto.MemberSaveRequest;
 import com.club.dto.MemberStatusRequest;
 import com.club.dto.RechargeRequest;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/members")
+@StaffOnly
 public class MemberController {
 
     private static final Logger log = LoggerFactory.getLogger(MemberController.class);
@@ -71,6 +73,14 @@ public class MemberController {
         log.info("event=member_status operatorId={} memberId={} status={}",
                 SessionUtils.currentUser(session).getId(), id, request.getStatus());
         return Result.success();
+    }
+
+    @PostMapping("/{id}/cancel")
+    public Result<Void> cancelMembership(@PathVariable Long id, HttpSession session) {
+        memberService.cancelMembership(id);
+        log.info("event=member_cancel operatorId={} memberId={}",
+                SessionUtils.currentUser(session).getId(), id);
+        return Result.success("会员注销成功", null);
     }
 
     @PostMapping("/{id}/recharges")

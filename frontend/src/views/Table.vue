@@ -30,6 +30,16 @@
         </div>
         <div v-else class="empty-info">当前空闲，可为会员或散客开台</div>
 
+        <div class="reservation-schedule">
+          <span>今日预约</span>
+          <div v-if="table.todayReservations?.length" class="reservation-tags">
+            <el-tag v-for="(reservation, index) in table.todayReservations" :key="index" type="warning" effect="plain">
+              {{ reservationTimeRange(reservation) }}
+            </el-tag>
+          </div>
+          <small v-else>暂无预约</small>
+        </div>
+
         <div class="card-actions">
           <template v-if="table.status === 0">
             <el-button type="primary" @click="showOpen(table)">开台</el-button>
@@ -94,6 +104,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMembers } from '../api/member'
 import { cancelSession, checkoutSession, getTables, openTable, updateTableStatus } from '../api/table'
 import { useAuthStore } from '../stores/auth'
+import { reservationTimeRange } from '../utils/reservationSlots'
 
 const auth = useAuthStore()
 const loading = ref(false)
@@ -256,6 +267,10 @@ function money(value) {
 .session-info div, .checkout-summary div { display: flex; justify-content: space-between; gap: 15px; }
 .session-info span, .checkout-summary span { color: #8a949d; }
 .empty-info { min-height: 92px; color: #8a949d; line-height: 1.7; }
+.reservation-schedule { min-height: 58px; padding-top: 13px; border-top: 1px solid #edf0ee; }
+.reservation-schedule > span { display: block; margin-bottom: 7px; color: #8a949d; font-size: 13px; }
+.reservation-schedule small { color: #a0a8a4; }
+.reservation-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .card-actions { display: flex; margin-top: 18px; }
 .dialog-alert { margin-bottom: 20px; }
 .checkout-summary { display: grid; gap: 12px; padding: 16px; margin-bottom: 20px; background: #f6f8fa; border-radius: 8px; }

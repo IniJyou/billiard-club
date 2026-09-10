@@ -2,8 +2,11 @@ package com.club.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.club.common.BusinessException;
+import com.club.common.BizConstants;
+import com.club.dto.ChangePasswordRequest;
 import com.club.dto.LoginRequest;
 import com.club.dto.LoginUser;
+import com.club.dto.RegisterRequest;
 import com.club.entity.SysUser;
 import com.club.mapper.SysUserMapper;
 import com.club.service.AuthService;
@@ -13,6 +16,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.LocalDateTime;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -46,6 +51,40 @@ public class AuthServiceImpl implements AuthService {
             log.info("event=password_hash_upgraded userId={} username={}", user.getId(), user.getUsername());
         }
         return new LoginUser(user.getId(), user.getUsername(), user.getRealName(), user.getRole());
+    }
+
+    @Override
+    @Transactional
+    public LoginUser register(RegisterRequest request) {
+        String phone = request.getPhone().trim();
+        if (userMapper.selectCount(Wrappers.<SysUser>lambdaQuery().eq(SysUser::getUsername, phone)) > 0) {
+            throw new BusinessException(409, "该手机号已经注册");
+        }
+        SysUser user = new SysUser();
+        user.setUsername(phone);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRealName(request.getRealName().trim());
+        user.setRole(BizConstants.ROLE_USER);
+        user.setStatus(BizConstants.ENABLED);
+        user.setCreateTime(LocalDateTime.now());
+        userMapper.insert(user);
+        log.info("event=user_register userId={} username={}", user.getId(), user.getUsername());
+        return new LoginUser(user.getId(), user.getUsername(), user.getRealName(), user.getRole());
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        SysUser user = userMapper.selectById(userId);
+        if (user == null || !matches(request.getOldPassword(), user.getPassword())) {
+            throw new BusinessException("原密码不正确");
+        }
+        if (request.getOldPassword().equals(request.getNewPassword())) {
+            throw new BusinessException("新密码不能与原密码相同");
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userMapper.updateById(user);
+        log.info("event=password_changed userId={} username={}", user.getId(), user.getUsername());
     }
 
     private boolean matches(String rawPassword, String storedPassword) {

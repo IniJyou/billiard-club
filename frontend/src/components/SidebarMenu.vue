@@ -5,11 +5,21 @@
       <div><strong>台球厅管理</strong><small>Billiard Club</small></div>
     </div>
     <el-menu :default-active="route.path" router class="app-menu" @select="$emit('navigate')">
-      <el-menu-item index="/home">工作台</el-menu-item>
-      <el-menu-item index="/members">会员与充值</el-menu-item>
-      <el-menu-item index="/tables">球桌与结账</el-menu-item>
-      <el-menu-item index="/records">业务流水</el-menu-item>
-      <el-menu-item v-if="auth.isAdmin" index="/reports">经营报表</el-menu-item>
+      <template v-if="auth.isStaff">
+        <el-menu-item index="/home">工作台</el-menu-item>
+        <el-menu-item index="/members">会员与充值</el-menu-item>
+        <el-menu-item index="/tables">球桌与结账</el-menu-item>
+        <el-menu-item index="/reservations">当天预约</el-menu-item>
+        <el-menu-item index="/records">业务流水</el-menu-item>
+        <el-menu-item v-if="auth.isAdmin" index="/reports">经营报表</el-menu-item>
+      </template>
+      <template v-else>
+        <el-menu-item index="/user/home">用户首页</el-menu-item>
+        <el-menu-item index="/user/membership">我的会员</el-menu-item>
+        <el-menu-item index="/user/reservations">当天预约</el-menu-item>
+        <el-menu-item index="/user/records">我的流水</el-menu-item>
+        <el-menu-item index="/user/profile">个人资料</el-menu-item>
+      </template>
     </el-menu>
   </div>
 </template>
