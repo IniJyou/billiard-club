@@ -17,36 +17,48 @@
 ```
 billiard-club/
 ├── database/
-│   └── init.sql                  # 建库建表 + 初始化数据（一键导入）
+│   ├── init.sql                  # 建库建表 + 初始化数据（一键导入）
+│   ├── migration_v2.sql          # 旧数据库升级脚本
+│   ├── migration_v3_user_portal.sql  # 用户端与当天预约升级脚本
+│   └── migration_v4_member_profile.sql # 会员资料字段升级脚本
 ├── docs/
 │   └── 详细设计说明书.md          # 需求分析 + 详细设计（提交前改名: 组号+详细设计说明书.pdf）
 ├── backend/                      # Spring Boot 后端
 │   ├── pom.xml
 │   ├── .mvn/jvm.config           # -Dfile.encoding=UTF-8（解决 GBK 乱码）
-│   └── src/main/
-│       ├── java/com/club/
-│       │   ├── BilliardClubApplication.java   # 启动类
-│       │   ├── common/            # Result / PageResult / 异常处理
-│       │   ├── config/            # MyBatis-Plus 配置
-│       │   ├── controller/        # 登录、会员、球桌、计费、流水 REST 接口
-│       │   ├── service/           # 事务、计费、折扣、积分与权限逻辑
-│       │   ├── mapper/            # MyBatis-Plus Mapper + 行锁/关联查询
-│       │   └── entity/            # 8 张业务表对应实体
-│       └── resources/
-│           ├── application.yml    # 配置（含数据库连接，需改密码）
-│           └── mapper/            # MyBatis XML（可选，复杂 SQL 用）
-└── frontend/                     # Vue3 前端
-    ├── package.json
-    ├── vite.config.js            # 已配置 /api 代理到 8080
-    └── src/
-        ├── main.js
-        ├── App.vue
-        ├── router/               # 路由
-        ├── api/                  # axios 封装
-        ├── styles/               # 全局样式
-        ├── layouts/              # 登录后的公共侧边栏与顶栏
-        ├── stores/               # Session 用户状态
-        └── views/                # 登录、工作台、会员、球桌、流水页面
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/club/
+│       │   │   ├── BilliardClubApplication.java   # 启动类
+│       │   │   ├── common/        # 响应封装、异常处理与角色校验
+│       │   │   ├── config/        # MyBatis-Plus、鉴权、日志与序列化配置
+│       │   │   ├── controller/    # 登录、会员、球桌、预约、计费、流水与报表接口
+│       │   │   ├── service/       # 事务、计费、折扣、积分、预约与权限逻辑
+│       │   │   ├── mapper/        # MyBatis-Plus Mapper + 行锁/关联查询
+│       │   │   ├── entity/        # 会员、用户、球桌、预约、账单与流水实体
+│       │   │   ├── dto/           # 请求参数对象
+│       │   │   ├── vo/            # 接口响应视图对象
+│       │   │   └── util/          # 计费、编号、摘要与 CSV 工具
+│       │   └── resources/
+│       │       ├── application.yml    # 数据库及应用配置
+│       │       └── logback-spring.xml # 运行日志配置
+│       └── test/                  # 后端单元测试与集成测试
+├── frontend/                     # Vue3 前端
+│   ├── package.json
+│   ├── vite.config.js            # 已配置 /api 代理到 8080
+│   └── src/
+│       ├── main.js
+│       ├── App.vue
+│       ├── api/                  # 管理端、前台端和用户端接口封装
+│       ├── components/           # 页面头部、指标卡、图表等公共组件
+│       ├── layouts/              # 登录后的公共侧边栏与顶栏
+│       ├── router/               # 三类角色路由与访问控制
+│       ├── stores/               # Session 用户状态
+│       ├── styles/               # 全局样式
+│       ├── utils/                # 格式化与预约时段工具
+│       └── views/                # 登录、会员、球桌、预约、流水、报表及用户端页面
+└── scripts/
+    └── build-delivery.ps1        # Windows 课程设计交付包构建脚本
 ```
 
 ## 快速开始
